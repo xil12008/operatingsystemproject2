@@ -10,14 +10,14 @@ logging.basicConfig(stream=sys.stderr, level=logging.CRITICAL)
 
 class Memory():
     def __init__(self):
-        self.cap = 256
-        self.mem = ['.' for _ in range(self.cap)]
         self.n_blocks = 128
+        self.cap = self.n_blocks
         self.blocksize = 4096 #in bytes
-    
+        self.mem = ['.' for _ in range(self.cap)]
+
     def printmem(self):
         print "=" * 32
-        for i in range(8):
+        for i in range(self.cap/32):
             for j in range(32):
                 sys.stdout.write(self.mem[i*32+j])
             sys.stdout.write("\n")

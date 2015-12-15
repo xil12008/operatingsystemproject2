@@ -58,6 +58,7 @@ class Client(threading.Thread):
         self.client = client 
         self.address = address 
         self.size = 1024 
+        print "Received incoming connection from", address[0]
 
     def run(self): 
         running = 1 

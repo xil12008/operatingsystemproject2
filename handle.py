@@ -9,14 +9,13 @@ import re
 import array
 from memory import Memory
 
-
 mem = Memory()
 letter = 'A'
 file2letter = {}
 
 def store(filename, bytes, contents, s):
     printthreadid()
-    print "Rcvd: ADD", filename, bytes 
+    print "Rcvd: STORE", filename, bytes 
     global letter
     filename = (str)(filename)
     if filename in file2letter.keys():
@@ -36,16 +35,28 @@ def store(filename, bytes, contents, s):
 
         f = open('.storage/' + filename, 'wb+')
         f.write(contents)
+        f.close()
 
         file2letter[filename] = {"letter":letter, "length": int(bytes)} 
-        letter = chr(ord(letter) + 1)
+        letter = nextLetter()
+
         printthreadid()
         print "Simulated Clustered Disk Space Allocation:"
         mem.printmem()
+
         s.send("ACK\n")
         printthreadid()
         print "Sent: ACK"
 
+def nextLetter():
+    allletters = []
+    for name, value in file2letter.items():
+        allletters.append(file2letter[name]["letter"])
+    for i in range(26):
+        if not chr(ord('A') + i) in allletters:
+            return chr(ord('A') + i)
+    return '*' #ERROR
+                
 def printthreadid():
     print "[thread %d]" % threading.current_thread().ident,
 
@@ -66,31 +77,37 @@ def read(filename, offset, length, s):
         return
 
     with open(".storage/" +filename, "rb") as f:
-        bytecount = 0
-        retlist = []
-        byte = f.read(1)
-        while byte != "":
-            if bytecount >= offset and bytecount < offset + length:
-                retlist.append(byte)
-            bytecount += 1 
-            byte = f.read(1)
-    s.send("ACK "+ str(length) + "\n" + ''.join(retlist) )
+        f.seek(offset, 0)
+        bytes = f.read(length)
+
     printthreadid()
-    print "Sent %d bytes (from ** '%c' blocks) from offset %d" %( int(length), file2letter[filename]["letter"], int(offset) ) 
+    print "Sent: ACK %d" % length
+    s.send("ACK "+ str(length) + "\n" + bytes)
+    
+    printthreadid()
+    numblock = int((offset + length + mem.blocksize - 1) / mem.blocksize) - int(offset / mem.blocksize)
+    print "Sent %d bytes (from %d '%c' blocks) from offset %d" %( int(length), int(numblock), file2letter[filename]["letter"], int(offset) ) 
 
 def delete(filename, s):
     printthreadid()
-    print "Rcvd: Rcvd: DELETE", filename
+    print "Rcvd: DELETE", filename
     if not filename in file2letter.keys():
         s.send("ERROR: NO SUCH FILE\n")  
         printthreadid()
         print "Sent: ERROR: NO SUCH FILE" 
         return
     printthreadid()
-    mem.deallocate(file2letter[filename]["letter"])
+    mem.deallocate(filename, file2letter[filename]["letter"])
+
+    printthreadid()
+    print "Simulated Clustered Disk Space Allocation:"
+    mem.printmem()
+
     s.send("ACK\n")
     printthreadid()
     print "Sent: ACK"
+
+    file2letter.pop(filename, None)
     return
 
 def dir(s):
@@ -121,5 +138,5 @@ def handle(input, s):
     elif inputs[0] == "DIR":
         dir(s)
     else:
-        s.send("Unknown command\n")
+        s.send("ERROR: Unknown command\n")
 
