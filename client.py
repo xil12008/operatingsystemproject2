@@ -11,18 +11,18 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 s.connect((TCP_IP, TCP_PORT))
 
-while (1):
-    buffer = "0123456789" * (25820/10)
-    s.send("STORE abc.txt 25820\n" + buffer)
-    data = s.recv(1024)
-    print "recv:", data
+buffer = "0123456789" * (100* 25820/10)
+s.send("STORE abcede.txt 2582000\n\r") 
+time.sleep(0.1)
+print "len", len(buffer)
+s.send(buffer)
+data = s.recv(1024)
+print "recv:", data
+    
+time.sleep(10)
 
-    time.sleep(10)
-
-    s.send("READ abc.txt 4090 5000\n")
-    data = s.recv(6000)
-    print "recv:", data
-
-    time.sleep(10)
+s.send("READ abc.txt 4090 5000\n")
+data = s.recv(6000)
+print "recv:", data
 
 s.close()

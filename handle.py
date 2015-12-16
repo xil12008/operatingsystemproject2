@@ -21,7 +21,7 @@ def store(filename, bytes, contents, s):
     if filename in file2letter.keys():
         s.send("ERROR: FILE EXISTS\n")  
         printthreadid()
-        print "Sent: ERROR: ERROR: FILE EXISTS"
+        print "Sent: ERROR: FILE EXISTS"
         return
     else:
         printthreadid()
@@ -124,9 +124,12 @@ def dir(s):
 def recvall(sock, n):
         data = ''
         while len(data) < n:
+            #print "recv", n - len(data)
             packet = sock.recv(n - len(data))
             if not packet:
+                #print "return None"
                 return None
+            #print "+", len(packet)
             data += packet
         return data
 
@@ -137,11 +140,8 @@ def handle(input, s):
         if inputs[0] == "STORE" and len(inputs) == 3 + 1:
             filename = inputs[1]
             bytes = inputs[2]
-            #content = inputs[3]
-            #read enough content
-            #if bytes > 1024:
             content = recvall(s, int(bytes))
-            print "len(content)=", len(content)
+            #print "recv len(content)=", len(content)
             store(filename, bytes, content, s)
         elif inputs[0] == "READ" and len(inputs) == 4 + 1:
             filename = inputs[1]
@@ -154,7 +154,9 @@ def handle(input, s):
         elif inputs[0] == "DIR" and len(inputs) == 1 + 1:
             dir(s)
         else:
-            s.send("ERROR: Unknown command\n")
+            printthreadid()
+            print "ERROR: Unknown input", input
+            s.send("ERROR: Unknown command " + str(input) + "\n")
     except:
         s.send("ERROR: input format is wrong\n")
 
