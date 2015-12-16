@@ -25,6 +25,7 @@ def store(filename, bytes, contents, s):
         return
     else:
         printthreadid()
+        letter = nextLetter()
         if not mem.allocate( letter, bytes): 
             s.send("ERROR: INSUFFICIENT DISK SPACE\n")
             print "Sent: ERROR: INSUFFICIENT DISK SPACE"
@@ -38,7 +39,6 @@ def store(filename, bytes, contents, s):
         f.close()
 
         file2letter[filename] = {"letter":letter, "length": int(bytes)} 
-        letter = nextLetter()
 
         printthreadid()
         print "Simulated Clustered Disk Space Allocation:"
@@ -53,7 +53,7 @@ def nextLetter():
     for name, value in file2letter.items():
         allletters.append(file2letter[name]["letter"])
     for i in range(26):
-        if not chr(ord('A') + i) in allletters:
+        if not ( chr(ord('A') + i) in allletters ):
             return chr(ord('A') + i)
     return '*' #ERROR
                 
@@ -112,31 +112,49 @@ def delete(filename, s):
 
 def dir(s):
     printthreadid()
-    print "Rcvd: Rcvd: DIR" 
+    print "Rcvd: DIR" 
     count = 0
     mystr = str(len(file2letter.items())) + "\n"
     for key, value in sorted(file2letter.items()): # Note the () after items!
         mystr += key + "\n"
     s.send(mystr)
+    printthreadid()
+    print "Sent:", " ".join( mystr.split() )
+
+def recvall(sock, n):
+        data = ''
+        while len(data) < n:
+            packet = sock.recv(n - len(data))
+            if not packet:
+                return None
+            data += packet
+        return data
 
 def handle(input, s):
-    inputs = input.split() 
-    inputs.append(s)
-    if inputs[0] == "STORE":
-        filename = inputs[1]
-        bytes = inputs[2]
-        content = inputs[3]
-        store(filename, bytes, content, s)
-    elif inputs[0] == "READ":
-        filename = inputs[1]
-        offset = inputs[2]
-        length = inputs[3]
-        read(filename, offset, length, s)
-    elif inputs[0] == "DELETE":
-        filename = inputs[1]
-        delete(filename, s)
-    elif inputs[0] == "DIR":
-        dir(s)
-    else:
-        s.send("ERROR: Unknown command\n")
+    try:
+        inputs = input.split() 
+        inputs.append(s)
+        if inputs[0] == "STORE" and len(inputs) == 4 + 1:
+            filename = inputs[1]
+            bytes = inputs[2]
+            content = inputs[3]
+            #read enough content
+            if bytes > 1024:
+                content += recvall(s, int(bytes) - len(content))
+            print "len(content)=", len(content)
+            store(filename, bytes, content, s)
+        elif inputs[0] == "READ" and len(inputs) == 4 + 1:
+            filename = inputs[1]
+            offset = inputs[2]
+            length = inputs[3]
+            read(filename, offset, length, s)
+        elif inputs[0] == "DELETE" and len(inputs) == 2 + 1:
+            filename = inputs[1]
+            delete(filename, s)
+        elif inputs[0] == "DIR" and len(inputs) == 1 + 1:
+            dir(s)
+        else:
+            s.send("ERROR: Unknown command\n")
+    except:
+        s.send("ERROR: input format is wrong\n")
 

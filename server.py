@@ -73,6 +73,7 @@ class Client(threading.Thread):
                 print "Client closed its socket....terminating"
                 running = 0 
 
+
 if __name__ == "__main__": 
     print "Block size is 4096"
     print "Number of blocks is 128"
