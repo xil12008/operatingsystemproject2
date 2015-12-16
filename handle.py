@@ -134,13 +134,13 @@ def handle(input, s):
     try:
         inputs = input.split() 
         inputs.append(s)
-        if inputs[0] == "STORE" and len(inputs) == 4 + 1:
+        if inputs[0] == "STORE" and len(inputs) == 3 + 1:
             filename = inputs[1]
             bytes = inputs[2]
-            content = inputs[3]
+            #content = inputs[3]
             #read enough content
-            if bytes > 1024:
-                content += recvall(s, int(bytes) - len(content))
+            #if bytes > 1024:
+            content = recvall(s, int(bytes))
             print "len(content)=", len(content)
             store(filename, bytes, content, s)
         elif inputs[0] == "READ" and len(inputs) == 4 + 1:
